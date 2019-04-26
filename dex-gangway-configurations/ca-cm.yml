@@ -1,0 +1,25 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ca
+  namespace: auth
+data:
+  ca.pem: |
+    -----BEGIN CERTIFICATE-----
+    MIIC9zCCAd+gAwIBAgIJAOaIs3GtUvJtMA0GCSqGSIb3DQEBCwUAMBIxEDAOBgNV
+    BAMMB2t1YmUtY2EwHhcNMTkwNDA5MjA0NzIxWhcNMjIwMTAzMjA0NzIxWjASMRAw
+    DgYDVQQDDAdrdWJlLWNhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA
+    4268zXqv+pe6A97jKf8f496YPAk4Yqk6uaoi7oHkgp+g0cd7OCqzLQfz6k28sBGL
+    lnwUOwwd0VnBQ3Siog53GzhHmN+QLP7/pLsKa2pO5Nb3WSlpInLGgyeQ/yIgLz+Z
+    JaIe9RC1x6rAn/JOwampW3dVn8b3o9ec3iJjfDcoPGk+e8h8u6fvlSnmatl2SgJw
+    ATdSgLW3yqBWbXu3tZPGPxhwkODLWUCdMsJTmgTFlrU8nuFcHcT5GRhu8mk7uohy
+    ju5H0wu/V0Dzmehbtrw1zKsvWQBjyh2JiQHS0nW4EutIk8aHIjkI7DpiP79X8JqD
+    aT+f4Wt6akQkiX/TTSpt9wIDAQABo1AwTjAdBgNVHQ4EFgQUDxrI0DLb8iOOKGRD
+    Qssy/9TgyicwHwYDVR0jBBgwFoAUDxrI0DLb8iOOKGRDQssy/9TgyicwDAYDVR0T
+    BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEA1uLvPCQcIJbpFsa6hcagMfnD2M2p
+    20ZLEyE5iduiFoaNzvUSenfn63YMr2m6Ch4REJP8ne6rNO68t09AxmN/NcZrrSvH
+    vQaBcZqPmuqTyap0fywnKPb1U1vfHFBaXg7FmTg/+EM6qkkF90aminj8yC0t1CDe
+    XUrWnNjpiGz2bUqq3h/Ird8W1Q7zMUY+vG3nuQ9DR6CG5RuFZTHicpJPZsgXDM9Z
+    IRlABgQAcCfh0BoN+J9asSD9CCfLbgvjYhfxILKRKUOuMKq/e8Bf7uJ2adqgcDoE
+    tDP6XABmeXIyQf8obrn/BEBO8RgXJGVegdNlWJpmzpWG4P5DcDAuqdMX5A==
+    -----END CERTIFICATE-----

@@ -1,0 +1,12 @@
+---
+name: "fab8-spring-boot-docker"
+home: "https://projects.spring.io/spring-boot/#/spring-boot-starter-parent/fab8-spring-boot-docker"
+sources:
+- "https://github.com/spring-projects/spring-boot/spring-boot-starter-parent/fab8-spring-boot-docker"
+version: "0.1.0"
+description: "Parent pom providing dependency and plugin management for applications\n\
+  \t\tbuilt with Maven"
+maintainers:
+- name: "Pivotal"
+  email: "info@pivotal.io"
+icon: "img/icons/spring-boot.svg"

@@ -1,0 +1,121 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'MyWebSite - ACG Stack'
+Parameters:
+  DbEndpoint:
+    Type: String
+    MaxLength: 100
+    Description: Endpoint for DB
+    Default: mywebsitedb.clm9f5vkzm5i.us-east-1.rds.amazonaws.com
+  DbName:
+    Type: String
+    MaxLength: 100
+    Description: Database Name
+    Default: MyWebSiteDB
+  DbUserName:
+    Type: String
+    MaxLength: 100
+    Description: Username for DB
+    Default: MyWebSiteDB
+  DbPassword:
+    Type: String
+    MaxLength: 100
+    Description: Password for DB
+    Default: MyWebSiteDB
+  WebServerInstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues: 
+      - "t2.micro"
+      - "t2.small"
+      - "t2.medium"
+  WebServerKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Select Security Key Name for your instance
+    Default: MyWebSite-KP
+  VPCStackName:
+    Type: String
+    MaxLength: 100
+    Description: The name of the related VPC Stack
+    Default: MyWebSite-VPCStack
+  EC2StackName:
+    Type: String
+    MaxLength: 100
+    Description: The name of the related EC2 Stack
+    Default: MyWebSite-EC2Stack
+Resources:
+# Launch Configuration #
+  MyWebSiteAutoScalingLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      AssociatePublicIpAddress: true
+      BlockDeviceMappings: 
+      - DeviceName: /dev/xvda
+        Ebs:
+          DeleteOnTermination: true
+          VolumeSize: 8
+      IamInstanceProfile: EC2_S3
+      ImageId: ami-02da3a138888ced85
+      InstanceType: !Ref WebServerInstanceType
+      KeyName: !Ref WebServerKey
+      LaunchConfigurationName: MyWebSiteAutoScalingLC
+      SecurityGroups: 
+        - Fn::ImportValue: 
+            Fn::Sub: "${VPCStackName}-WebServerSecurityGroup"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo su
+          yum update -y
+          yum install httpd -y
+          service httpd start
+          chkconfig httpd on
+          
+          yum install -y gcc-c++ make
+          curl -sL https://rpm.nodesource.com/setup_6.x | sudo -E bash -
+          yum install nodejs -y
+
+          sudo mkdir /var/www/html/rest-crud
+          sudo mkdir /var/www/html/rest-crud2
+          sudo aws s3 cp s3://mywebsitesourcecodebucket /var/www/html/rest-crud/ --recursive
+          cd /var/www/html/
+          echo '<html><h1>I am healthy</h1></html>' > index.html
+
+          cd rest-crud
+          sudo npm install
+          sudo npm audit fix --force
+
+          sudo yum install mysql -y
+          sudo mysql -h ${DbEndpoint} -u ${DbUserName} -p${DbPassword} ${DbName} < /var/www/html/rest-crud/t_user.sql
+
+          sed -i "24s/.*/        host     : '${DbEndpoint}',/" server.js
+          sed -i "25s/.*/        user     : '${DbUserName}',/" server.js
+          sed -i "26s/.*/        password     : '${DbPassword}',/" server.js
+          sed -i "27s/.*/        database     : '${DbName}',/" server.js
+
+          sudo npm install pm2 -g
+          sudo pm2 startup
+          sudo pm2 start server.js
+          sudo pm2 save
+  
+# AutoScaling Group #
+  MyWebSiteAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: MyWebSiteAutoScalingGroup
+      HealthCheckGracePeriod: 120
+      HealthCheckType: EC2
+      LaunchConfigurationName: !Ref MyWebSiteAutoScalingLaunchConfiguration
+      MaxSize: "3"
+      MinSize: "2"
+      Tags:
+        - Key: Name
+          Value: MyWebSite-AutoScaling-Group
+          PropagateAtLaunch: true
+      VPCZoneIdentifier: 
+        - Fn::ImportValue:
+            Fn::Sub: "${VPCStackName}-PublicSubnetId"
+        - Fn::ImportValue:
+            Fn::Sub: "${VPCStackName}-PublicSubnetId2"
+      TargetGroupARNs:
+        - Fn::ImportValue:
+            Fn::Sub: "${EC2StackName}-MyWebSiteTargetGroupId"

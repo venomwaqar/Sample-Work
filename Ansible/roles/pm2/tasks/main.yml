@@ -1,0 +1,16 @@
+---
+- name: Install PM2
+  npm: name=pm2 state=present global=yes
+
+- name: Init pm2
+  command: pm2 startup
+
+- name: delete if exists
+  command: pm2 delete server
+  ignore_errors: true
+
+- name: start application
+  command: chdir=/var/www/html/app pm2 start server.js
+
+- name: save state
+  command: pm2 save

@@ -1,0 +1,16 @@
+1. kubectl create secret tls dex.k8s-dev.truecaller.net.tls --cert=ssl/cert.pem --key=ssl/key.pem -n auth
+2. kubectl create secret tls login.k8s-dev.truecaller.net.tls --cert=ssl/cert.pem --key=ssl/key.pem -n auth
+3. kubectl create configmap gangway-ca —from-file=ssl/ca.pem -n auth
+4. kubectl -n gangway create secret generic gangway-key --from-literal=sesssionkey=$(openssl rand -base64 32)
+5. copy genereated ca.pem to /etc/kubernetes/ssl/ca.pem
+
+
+-------
+
+API Server changes:
+
+    - --oidc-issuer-url=https://ec2-54-245-199-252.us-west-2.compute.amazonaws.com:32000
+    - --oidc-client-id=gangway
+    - --oidc-username-claim=email
+    - --oidc-groups-claim=groups
+    - --oidc-ca-file=/etc/kubernetes/ssl/ca.pem

@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: gangway
+  namespace: auth
+  labels:
+    app: gangway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gangway
+  strategy:
+  template:
+    metadata:
+      labels:
+        app: gangway
+        revision: "1"
+    spec:
+      containers:
+        - name: gangway
+          image: gcr.io/heptio-images/gangway:v3.0.0
+          imagePullPolicy: Always
+          command: ["gangway", "-config", "/gangway/gangway.yaml"]
+          env:
+            - name: GANGWAY_SESSION_SECURITY_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gangway-key
+                  key: sesssionkey
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "200m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: gangway
+              mountPath: /gangway/
+            - name: tls
+              mountPath: /etc/gangway/tls/
+            - name: gangway-config
+              mountPath: /etc/ssl/
+      volumes:
+        - name: gangway
+          configMap:
+            name: gangway
+        - name: tls
+          secret:
+            secretName: login.k8s-dev.truecaller.net.tls
+        - name: gangway-config
+          configMap:
+            name: gangway-ca
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: gangway-svc
+  namespace: auth
+  labels:
+    app: gangway
+spec:
+  type: NodePort
+  ports:
+    - name: "http"
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 32002
+  selector:
+    app: gangway

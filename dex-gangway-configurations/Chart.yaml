@@ -1,0 +1,14 @@
+name: dex
+version: 1.0.0
+appVersion: v2.9.0
+description: CoreOS Dex
+keywords:
+- dex
+- oidc
+icon: https://github.com/dexidp/dex/raw/master/Documentation/logos/dex-glyph-color.png
+home: https://github.com/dexidp/dex/
+source:
+- https://github.com/dexidp/dex/
+maintainers:
+- name: waqar
+  email: waqar@eurustechnologies.com

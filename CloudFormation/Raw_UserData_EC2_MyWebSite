@@ -1,0 +1,33 @@
+curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.32.0/install.sh | bash
+. ~/.nvm/nvm.sh
+nvm install node
+
+
+sudo mkdir /var/www/html/rest-crud
+
+aws s3 cp s3://mywebsitesourcecodebucket /var/www/html/rest-crud/ --recursive
+cd /var/www/html/
+
+
+echo '<html><h1>I am healthy</h1></html>' > index.html
+
+cd rest-crud
+npm install
+npm audit fix --force
+
+
+
+node server.js
+
+
+
+ #!/bin/bash
+          sudo su
+          yum update -y
+          yum install httpd -y
+          service httpd start
+          chkconfig httpd on
+
+sudo yum install mysql -y
+sudo mysql -h mywebsitedb.clm9f5vkzm5i.us-east-1.rds.amazonaws.com -u MyWebSiteDB -pMyWebSiteDB MyWebSiteDB < /var/www/html/rest-crud/t_user.sql
+

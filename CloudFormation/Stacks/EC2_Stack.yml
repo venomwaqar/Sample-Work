@@ -1,0 +1,226 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'MyWebSite - EC2 Stack'
+Parameters:
+  DbEndpoint:
+    Type: String
+    MaxLength: 100
+    Description: Endpoint for DB    
+  DbName:
+    Type: String
+    MaxLength: 100
+    Description: Database Name
+  DbUserName:
+    Type: String
+    MaxLength: 100
+    Description: Username for DB   
+  DbPassword:
+    Type: String
+    MaxLength: 100
+    Description: Password for DB          
+  WebServerInstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues: 
+      - "t2.micro"
+      - "t2.small"
+      - "t2.medium"
+    Description: Instance type for Web Server.
+  WebServerKey:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Select Security Key Name for your instance
+  VPCStackName:
+    Type: String
+    MaxLength: 100
+    Description: The name of the related VPC Stack
+Resources:
+# EC2 Instance 1 #
+  WebServerEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: EC2_S3
+      ImageId: ami-02da3a138888ced85
+      BlockDeviceMappings: 
+      - DeviceName: /dev/xvda
+        Ebs:
+          DeleteOnTermination: true
+          VolumeSize: 8
+      InstanceType: !Ref WebServerInstanceType
+      KeyName: !Ref WebServerKey
+      SecurityGroupIds: 
+        - Fn::ImportValue: 
+            Fn::Sub: "${VPCStackName}-WebServerSecurityGroup"
+      SubnetId: 
+        Fn::ImportValue:
+          Fn::Sub: "${VPCStackName}-PublicSubnetId"
+      Tags:
+        - Key: Name
+          Value: MyWebServer-EC2-Instance
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo su
+          yum update -y
+          yum install httpd -y
+          service httpd start
+          chkconfig httpd on
+          
+          yum install -y gcc-c++ make
+          curl -sL https://rpm.nodesource.com/setup_6.x | sudo -E bash -
+          yum install nodejs -y
+
+          sudo mkdir /var/www/html/rest-crud
+          sudo mkdir /var/www/html/rest-crud2
+          sudo aws s3 cp s3://mywebsitesourcecodebucket /var/www/html/rest-crud/ --recursive
+          cd /var/www/html/
+          echo '<html><h1>I am healthy</h1></html>' > index.html
+
+          cd rest-crud
+          sudo npm install
+          sudo npm audit fix --force
+
+          sudo yum install mysql -y
+          sudo mysql -h ${DbEndpoint} -u ${DbUserName} -p${DbPassword} ${DbName} < /var/www/html/rest-crud/t_user.sql
+
+          sed -i "24s/.*/        host     : '${DbEndpoint}',/" server.js
+          sed -i "25s/.*/        user     : '${DbUserName}',/" server.js
+          sed -i "26s/.*/        password     : '${DbPassword}',/" server.js
+          sed -i "27s/.*/        database     : '${DbName}',/" server.js
+
+          sudo npm install pm2 -g
+          sudo pm2 startup
+          sudo pm2 start server.js
+          sudo pm2 save
+
+# EC2 Instance 2 #
+  WebServerEC2Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: EC2_S3
+      ImageId: ami-02da3a138888ced85
+      BlockDeviceMappings: 
+      - DeviceName: /dev/xvda
+        Ebs:
+          DeleteOnTermination: true
+          VolumeSize: 8
+      InstanceType: !Ref WebServerInstanceType
+      KeyName: !Ref WebServerKey
+      SecurityGroupIds: 
+        - Fn::ImportValue: 
+            Fn::Sub: "${VPCStackName}-WebServerSecurityGroup"
+      SubnetId: 
+        Fn::ImportValue:
+          Fn::Sub: "${VPCStackName}-PublicSubnetId2"
+      Tags:
+        - Key: Name
+          Value: MyWebServer-EC2-Instance_2
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          sudo su
+          yum update -y
+          yum install httpd -y
+          service httpd start
+          chkconfig httpd on
+          
+          yum install -y gcc-c++ make
+          curl -sL https://rpm.nodesource.com/setup_6.x | sudo -E bash -
+          yum install nodejs -y
+
+          sudo mkdir /var/www/html/rest-crud
+          sudo mkdir /var/www/html/rest-crud2
+          sudo aws s3 cp s3://mywebsitesourcecodebucket /var/www/html/rest-crud/ --recursive
+          cd /var/www/html/
+          echo '<html><h1>I am healthy</h1></html>' > index.html
+
+          cd rest-crud
+          sudo npm install
+          sudo npm audit fix --force
+
+          sudo yum install mysql -y
+          sudo mysql -h ${DbEndpoint} -u ${DbUserName} -p${DbPassword} ${DbName} < /var/www/html/rest-crud/t_user.sql
+
+          sed -i "24s/.*/        host     : '${DbEndpoint}',/" server.js
+          sed -i "25s/.*/        user     : '${DbUserName}',/" server.js
+          sed -i "26s/.*/        password     : '${DbPassword}',/" server.js
+          sed -i "27s/.*/        database     : '${DbName}',/" server.js
+
+          sudo npm install pm2 -g
+          sudo pm2 startup
+          sudo pm2 start server.js
+          sudo pm2 save
+
+# ELB #
+  MyWebSiteELB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: MyWebSite-ELB
+      SecurityGroups: 
+        - Fn::ImportValue: 
+            Fn::Sub: "${VPCStackName}-ELBSecurityGroup"
+      Subnets:
+        - Fn::ImportValue: 
+            Fn::Sub: "${VPCStackName}-PublicSubnetId2"
+        - Fn::ImportValue: 
+            Fn::Sub: "${VPCStackName}-PublicSubnetId"
+      Tags:
+        - Key: Name
+          Value: MyWebSite-ELB
+  MyWebSiteTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: MyWebSite-TG
+      HealthCheckIntervalSeconds: 5
+      HealthCheckTimeoutSeconds: 3
+      HealthCheckPort: "3000"
+      HealthCheckPath: /api/user
+      HealthCheckProtocol: HTTP
+      HealthyThresholdCount: 3
+      Port: 3000
+      Protocol: HTTP
+      Tags:
+        - Key: Name
+          Value: MyWebSite-TG
+      Targets:
+        - Id: !Ref WebServerEC2Instance2
+        - Id: !Ref WebServerEC2Instance
+      VpcId: 
+        Fn::ImportValue: !Sub "${VPCStackName}-VPCId"
+      TargetType: instance
+  MyWebSiteELBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: MyWebSiteTargetGroup
+      LoadBalancerArn:
+          Ref: MyWebSiteELB
+      Port: 3000
+      Protocol: HTTP
+  MyWebSiteELBListener2:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn:
+            Ref: MyWebSiteTargetGroup
+      LoadBalancerArn:
+          Ref: MyWebSiteELB
+      Port: 80
+      Protocol: HTTP
+Outputs:
+  StackWebServerInstance:
+    Description: The ID of the WebServer EC2 Instance
+    Value: !Ref WebServerEC2Instance
+    Export:
+      Name: !Sub "${AWS::StackName}-WebServerInstanceId"
+  StackWebServerInstance2:
+    Description: The ID of the WebServer EC2 Instance 2
+    Value: !Ref WebServerEC2Instance2
+    Export:
+      Name: !Sub "${AWS::StackName}-WebServerInstanceId2"
+  StackMyWebSiteTargetGroup:
+    Description: The ID of the MyWebSite TargetGroup
+    Value: !Ref MyWebSiteTargetGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-MyWebSiteTargetGroupId"

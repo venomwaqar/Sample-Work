@@ -1,0 +1,37 @@
+---
+- name: install tools
+  apt: name={{item}} state=present
+  with_items:
+    - python-mysqldb
+
+- name: install mysql-server
+  apt: name=mysql-server state=present
+
+- name: ensure mysql listening on all ports
+  lineinfile: dest=/etc/mysql/my.cnf regexp=^bind-address
+              line="bind-address = {{ansible_all_ipv4_addresses[0]}}"
+  notify: restart mysql
+
+- name: Ansible insert a line before example
+  lineinfile:
+    path: /etc/mysql/my.cnf
+    line: '[mysqld]'
+    insertbefore: .*bind-address
+  notify: restart mysql
+
+- name: ensure mysql started
+  service: name=mysql state=started enabled=yes
+
+- name: create user
+  mysql_user: name={{db_username}} password={{db_password}} priv=*.*:ALL
+              host=% state=present
+
+- name: copy init queries
+  copy: src=init_queries/ dest=/init_queries/ mode=0755
+
+- name: importing t_user
+  mysql_db:
+    state: import
+    name: "{{db_name}}"
+    target: /init_queries/t_user.sql
+  ignore_errors: true

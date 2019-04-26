@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'MyWebSite - RDS Stack'
+Parameters:
+  VPCStackName:
+    Type: String
+    MaxLength: 100
+    Description: The name of the related VPC Stack
+  InstanceStorage:
+    Type: Number
+    Description: Storage alloted for the Db
+    Default: 20
+    AllowedValues: 
+      - 20
+      - 25 
+      - 30
+  InstanceClass:
+    Type: String
+    Description: Instance type for the Db
+    Default: db.t2.micro
+    AllowedValues:
+      - db.t2.micro
+Resources:
+  MyWebSiteDBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet Group for MyWebSite DB Instance
+      SubnetIds:
+        - Fn::ImportValue:
+            Fn::Sub: "${VPCStackName}-PrivateSubnetId"
+        - Fn::ImportValue:
+            Fn::Sub: "${VPCStackName}-PrivateSubnet2Id"
+      Tags:
+        - Key: Name
+          Value: MyWebSite-DbSubnetGroup
+  MyWebSiteDBInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      AllocatedStorage: !Ref InstanceStorage
+      DBInstanceClass: !Ref InstanceClass
+      DBInstanceIdentifier: MyWebSiteDB
+      DBName: MyWebSiteDB
+      DBSubnetGroupName: !Ref MyWebSiteDBSubnetGroup
+      Engine: MySQL
+      EngineVersion: 5.6.40
+      MasterUsername: MyWebSiteDB
+      MasterUserPassword: MyWebSiteDB
+      VPCSecurityGroups:
+        - Fn::ImportValue:
+            Fn::Sub: "${VPCStackName}-RDSSecurityGroup"

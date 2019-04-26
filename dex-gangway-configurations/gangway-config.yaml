@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gangway
+  namespace: auth
+data:
+  gangway.yaml: |
+    # The cluster name
+    clusterName: "TGIK"
+    # This is the API server URL that you want users to use and configure in
+    # their Kubectl. For the Heptio AWS quickstart this'll be an ELB name.
+    apiServerURL: "https://172.31.50.216:6443"
+    # The URL to send authorize requests to
+    authorizeURL: "https://ec2-54-245-199-252.us-west-2.compute.amazonaws.com:32000/auth"
+    # URL to get a token from
+    tokenURL: "https://ec2-54-245-199-252.us-west-2.compute.amazonaws.com:32000/token"
+    # API client ID as indicated by the identity provider
+    clientID: "gangway"
+    # API client secret as indicated by the identity provider
+    clientSecret: "supersecret"
+    # # Endpoint that provides user profile information
+    # audience: "https://example.auth0.com/userinfo"
+    # Where to redirect back to. This should be a URL
+    # Where gangway is reachable
+    redirectURL: "https://ec2-54-245-199-252.us-west-2.compute.amazonaws.com:32002/callback"
+    # Used to specify the scope of the requested Oauth authorization.
+    scopes: ["openid", "profile", "email", "offline_access", "groups"]
+    # The JWT claim to use as the Kubnernetes username
+    usernameClaim: "email"
+    # The JWT claim to use as the email claim
+    emailClaim: "email"
+    serveTLS: true
+    certFile: "/etc/gangway/tls/tls.crt"
+    keyFile: "/etc/gangway/tls/tls.key"
+    trustedCAPath: "/etc/ssl/ca.pem"

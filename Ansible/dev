@@ -1,0 +1,6 @@
+[webservers]
+webserver01 ansible_user=webserver ansible_sudo_pass=StarGate23
+webserver02 ansible_user=webserver2 ansible_sudo_pass=StarGate22
+
+[database]
+dbserver ansible_user=db ansible_sudo_pass=StarGate22

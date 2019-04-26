@@ -1,0 +1,41 @@
+---
+- name: NodeSource package key
+  apt_key:
+    state: present
+    url: https://deb.nodesource.com/gpgkey/nodesource.gpg.key
+- name: NodeSource repository
+  apt_repository:
+    repo: 'deb https://deb.nodesource.com/node_6.x xenial main'
+- name: Install NodeJS
+  apt:
+    state: present
+    name: nodejs
+
+- name: copy app source
+  copy: src=app/ dest=/var/www/html/app/ mode=0755
+  notify: restart apache2
+
+- name: update host
+  lineinfile: 
+    dest: /var/www/html/app/server.js 
+    regexp: "UPDATEHOST" 
+    line: "host : '{{ db_server }}',"
+    state: present
+
+- name: update user
+  lineinfile: 
+    dest: /var/www/html/app/server.js 
+    regexp: "UPDATEUSER"
+    line: "user : '{{ db_username }}',"
+
+- name: update password
+  lineinfile: 
+    dest: /var/www/html/app/server.js 
+    regexp: "UPDATEPASSWORD" 
+    line: "password : '{{ db_password }}',"
+
+- name: update database
+  lineinfile: 
+    dest: /var/www/html/app/server.js 
+    regexp: "UPDATEDATABASE"
+    line:   "database : '{{ db_name }}',"
